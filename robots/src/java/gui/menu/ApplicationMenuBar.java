@@ -19,6 +19,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
     private void initializeMenu() {
         add(createLookAndFeelMenu());
         add(createTestMenu());
+        add(createWindowMenu()); //меню управления окнами
     }
 
     private JMenu createLookAndFeelMenu() {
@@ -41,7 +42,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
         JMenuItem menuItem = new JMenuItem(text, mnemonic);
         menuItem.addActionListener(event -> {
             mainFrame.setLookAndFeel(lookAndFeelClassName);
-            mainFrame.invalidate(); // Обновляем интерфейс
+            mainFrame.invalidate(); // обновляем интерфейс
         });
         return menuItem;
     }
@@ -64,5 +65,52 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
             Logger.debug("Новая строка");
         });
         return menuItem;
+    }
+
+
+    //меню для управления окнами
+    private JMenu createWindowMenu() {
+        JMenu menu = new JMenu("Окна");
+        menu.setMnemonic(KeyEvent.VK_O);
+        menu.getAccessibleContext().setAccessibleDescription("Управление окнами приложения");
+
+        //пункты для открытия окон
+        JMenuItem openGameWindowItem = new JMenuItem("Открыть игровое окно", KeyEvent.VK_I);
+        openGameWindowItem.addActionListener(event -> {
+            mainFrame.openGameWindow();
+        });
+        menu.add(openGameWindowItem);
+
+        JMenuItem openLogWindowItem = new JMenuItem("Открыть окно логов", KeyEvent.VK_P);
+        openLogWindowItem.addActionListener(event -> {
+            mainFrame.openLogWindow();
+        });
+        menu.add(openLogWindowItem);
+
+        menu.addSeparator(); // Разделитель
+
+        //пункт для закрытия игрового окна
+        JMenuItem closeGameWindowItem = new JMenuItem("Закрыть игровое окно", KeyEvent.VK_G);
+        closeGameWindowItem.addActionListener(event -> {
+            mainFrame.closeGameWindow();
+        });
+        menu.add(closeGameWindowItem);
+
+        //пункт для закрытия окна логов
+        JMenuItem closeLogWindowItem = new JMenuItem("Закрыть окно логов", KeyEvent.VK_L);
+        closeLogWindowItem.addActionListener(event -> {
+            mainFrame.closeLogWindow();
+        });
+        menu.add(closeLogWindowItem);
+
+        //пункт для выхода из приложения
+        JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_Q);
+        exitItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_Q, java.awt.Event.CTRL_MASK));
+        exitItem.addActionListener(event -> {
+            mainFrame.exitApplication();
+        });
+        menu.add(exitItem);
+
+        return menu;
     }
 }
