@@ -41,7 +41,7 @@ public class MainApplicationFrame extends JFrame
         addWindow(logWindow);
 
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
+        gameWindow.setSize(1180, 620);
         addWindow(gameWindow);
 
         setJMenuBar(createMenuBar());
@@ -155,7 +155,7 @@ public class MainApplicationFrame extends JFrame
     public void openGameWindow() {
         if (gameWindow == null || gameWindow.isClosed()) {
             gameWindow = new GameWindow();
-            gameWindow.setSize(400, 400);
+            gameWindow.setSize(1180, 620);
             addWindow(gameWindow);
         } else {
             //если окно уже открыто, активируем его

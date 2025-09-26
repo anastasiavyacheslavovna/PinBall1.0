@@ -20,6 +20,9 @@ public class GameWindow extends JInternalFrame
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
+        setResizable(false);
+        setMaximizable(false);
+        setIconifiable(false);
 
         //обработка закрытия окна
         addInternalFrameListener(new InternalFrameAdapter() {
