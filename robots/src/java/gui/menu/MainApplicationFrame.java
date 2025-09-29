@@ -1,21 +1,15 @@
 package gui.menu;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JMenuBar;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
-import gui.ConfirmationDialog;
-import gui.GameWindow;
-import gui.LogWindow;
+import gui.*;
 import log.Logger;
 
 
@@ -24,6 +18,7 @@ public class MainApplicationFrame extends JFrame
     private final JDesktopPane desktopPane = new JDesktopPane();
     private LogWindow logWindow;
     private GameWindow gameWindow;
+    private static final String PROFILE_FILE = "application_profile.dat";
 
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
@@ -36,13 +31,22 @@ public class MainApplicationFrame extends JFrame
 
         setContentPane(desktopPane);
 
+        ApplicationProfile savedProfile = loadProfile();
+        if (savedProfile != null && savedProfile.isProfileExists()) {
+            boolean restore = showRestoreProfileDialog();
+            if (restore) {
+                restoreProfile(savedProfile);
+            } else {
+                //создаем окна по умолчанию
+                createDefaultWindows();
+                //удаляем файл профиля
+                deleteProfileFile();
+            }
+        } else {
+            //если профиля нет, создаем окна по умолчанию
+            createDefaultWindows();
+        }
 
-        LogWindow logWindow = createLogWindow();
-        addWindow(logWindow);
-
-        GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(1180, 620);
-        addWindow(gameWindow);
 
         setJMenuBar(createMenuBar());
         //закрытие главного окна
@@ -50,34 +54,152 @@ public class MainApplicationFrame extends JFrame
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                handleApplicationClosing();
+                exitApplication();
             }
         });
     }
 
-    //закрытие приложения
-    private void handleApplicationClosing() {
-        boolean confirmed = ConfirmationDialog.showExitConfirmation();
-        if (confirmed) {
-            // закрываем все внутренние окна
-            if (logWindow != null && !logWindow.isClosed()) {
-                try {
-                    logWindow.setClosed(true);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+    //удаление профиля
+    private void deleteProfileFile() {
+        File profileFile = new File(PROFILE_FILE);
+        if (profileFile.exists()) {
+            if (profileFile.delete()) {
+                Logger.debug("Файл профиля удален");
+            } else {
+                Logger.error("Не удалось удалить файл профиля");
             }
-            if (gameWindow != null && !gameWindow.isClosed()) {
-                try {
-                    gameWindow.setClosed(true);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
+        }
+    }
 
-            // завершаем приложение
-            dispose();
-            System.exit(0);
+    //создание окон по умолчанию
+    private void createDefaultWindows() {
+        logWindow = createLogWindow();
+        addWindow(logWindow);
+
+        gameWindow = new GameWindow();
+        gameWindow.setSize(1180, 620);
+        addWindow(gameWindow);
+    }
+
+    private boolean showRestoreProfileDialog() {
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                "Обнаружен сохраненный профиль приложения. Восстановить предыдущее состояние окон?",
+                "Восстановление профиля",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        return result == JOptionPane.YES_OPTION;
+    }
+
+    // Восстановление профиля
+    private void restoreProfile(ApplicationProfile profile) {
+        // Восстанавливаем окно логов
+        if (profile.getLogWindowState() != null && profile.getLogWindowState().isOpen()) {
+            logWindow = createLogWindow();
+            applyWindowState(logWindow, profile.getLogWindowState());
+            addWindow(logWindow);
+        }
+
+        // Восстанавливаем игровое окно
+        if (profile.getGameWindowState() != null && profile.getGameWindowState().isOpen()) {
+            gameWindow = new GameWindow();
+            applyWindowState(gameWindow, profile.getGameWindowState());
+            addWindow(gameWindow);
+        }
+    }
+
+    //применение состояния к окну
+    private void applyWindowState(JInternalFrame window, WindowState state) {
+        if (state.getBounds() != null) {
+            //проверяем, чтобы окно не выходило за пределы экрана
+            Rectangle bounds = state.getBounds();
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+            //корректируем положение, если окно выходит за пределы экрана
+            if (bounds.x < 0) bounds.x = 10;
+            if (bounds.y < 0) bounds.y = 10;
+            if (bounds.x + bounds.width > screenSize.width)
+                bounds.width = screenSize.width - bounds.x - 50;
+            if (bounds.y + bounds.height > screenSize.height)
+                bounds.height = screenSize.height - bounds.y - 50;
+
+            window.setBounds(bounds);
+        }
+
+        try {
+            //восстанавливаем свернутое/развернутое состояние
+            if (window instanceof LogWindow) {
+                if (state.isIcon()) {
+                    window.setIcon(true);
+                }
+                if (state.isMaximum()) {
+                    window.setMaximum(true);
+                }
+            }
+        } catch (Exception e) {
+            Logger.error("Ошибка при восстановлении состояния окна: " + e.getMessage());
+        }
+    }
+
+    //сохранение профиля при выходе
+    private void saveProfile() {
+        ApplicationProfile profile = new ApplicationProfile();
+        profile.setProfileExists(true);
+
+        //сохраняем состояние окна логов
+        if (logWindow != null && !logWindow.isClosed()) {
+            WindowState logState = captureWindowState(logWindow);
+            profile.setLogWindowState(logState);
+        } else {
+            profile.setLogWindowState(new WindowState(false, null, false, false));
+        }
+
+        //сохраняем состояние игрового окна
+        if (gameWindow != null && !gameWindow.isClosed()) {
+            WindowState gameState = captureWindowState(gameWindow);
+            profile.setGameWindowState(gameState);
+        } else {
+            profile.setGameWindowState(new WindowState(false, null, false, false));
+        }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(Paths.get(PROFILE_FILE)))) {
+            oos.writeObject(profile);
+            Logger.debug("Профиль приложения сохранен");
+        } catch (IOException e) {
+            Logger.error("Ошибка при сохранении профиля: " + e.getMessage());
+        }
+    }
+
+    //захват состояния окна
+    private WindowState captureWindowState(JInternalFrame window) {
+        Rectangle bounds = window.getBounds();
+        boolean isIcon = window.isIcon();
+        boolean isMaximum = window.isMaximum();
+
+        if (window instanceof GameWindow) {
+            isIcon = false;
+            isMaximum = false;
+        }
+
+        return new WindowState(true, bounds, isIcon, isMaximum);
+    }
+
+    //загрузка профиля
+    private ApplicationProfile loadProfile() {
+        File profileFile = new File(PROFILE_FILE);
+        if (!profileFile.exists()) {
+            return null;
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(Paths.get(PROFILE_FILE)))) {
+            ApplicationProfile profile = (ApplicationProfile) ois.readObject();
+            profile.setProfileExists(true);
+            Logger.debug("Профиль приложения загружен");
+            return profile;
+        } catch (IOException | ClassNotFoundException e) {
+            Logger.error("Ошибка при загрузке профиля: " + e.getMessage());
+            return null;
         }
     }
 
@@ -101,10 +223,11 @@ public class MainApplicationFrame extends JFrame
         }
     }
 
-    //метод для выхода из приложения
+    //выход из приложения
     public void exitApplication() {
         boolean confirmed = ConfirmationDialog.showExitConfirmation();
         if (confirmed) {
+            saveProfile();
             //логируем выход
             Logger.debug("Приложение завершает работу");
 
@@ -162,7 +285,7 @@ public class MainApplicationFrame extends JFrame
             try {
                 gameWindow.setSelected(true);
             } catch (Exception ex) {
-                ex.printStackTrace();
+                Logger.debug("Ошибка при активации окна: " + ex.getMessage());
             }
         }
     }
@@ -176,7 +299,7 @@ public class MainApplicationFrame extends JFrame
             try {
                 logWindow.setSelected(true);
             } catch (Exception ex) {
-                ex.printStackTrace();
+                Logger.debug("Ошибка при активации окна: " + ex.getMessage());
             }
         }
     }

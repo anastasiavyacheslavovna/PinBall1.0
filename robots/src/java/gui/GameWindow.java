@@ -1,5 +1,8 @@
 package gui;
 
+import gui.game.GameVisualizer;
+import log.Logger;
+
 import java.awt.BorderLayout;
 import java.beans.PropertyVetoException;
 
@@ -10,13 +13,12 @@ import javax.swing.event.InternalFrameEvent;
 
 public class GameWindow extends JInternalFrame
 {
-    private final GameVisualizer m_visualizer;
     private boolean closingFromMenu = false; //флаг для закрытия окна
 
     public GameWindow() 
     {
         super("Игровое поле", true, true, true, true);
-        m_visualizer = new GameVisualizer();
+        GameVisualizer m_visualizer = new GameVisualizer();
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
@@ -37,7 +39,7 @@ public class GameWindow extends JInternalFrame
         pack();
     }
 
-    // обработка закрытия окна
+    //обработка закрытия окна
     private void handleWindowClosing() {
         boolean confirmed = ConfirmationDialog.showCloseConfirmation("Игровое поле");
         if (!confirmed) {
@@ -45,7 +47,7 @@ public class GameWindow extends JInternalFrame
             try {
                 setClosed(false); //отменяем закрытие
             } catch (PropertyVetoException ex) {
-                ex.printStackTrace();
+                Logger.error("Ошибка при отмене закрытия" + ex.getMessage());
             }
             return;
         }
@@ -64,7 +66,7 @@ public class GameWindow extends JInternalFrame
                 setClosed(true); //закрываем окно
                 return true;
             } catch (PropertyVetoException ex) {
-                ex.printStackTrace();
+                Logger.error("Ошибка при закрытие" + ex.getMessage());
                 return false;
             }
         } else {

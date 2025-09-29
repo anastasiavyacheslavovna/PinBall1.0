@@ -1,4 +1,4 @@
-package gui;
+package gui.game;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -9,7 +9,6 @@ public class Bumper {
     private final double m_y;
     private final double m_radius;
 
-    private final Color m_baseColor;
     private final Color m_hitColor;
     private Color m_currentColor;
 
@@ -21,24 +20,11 @@ public class Bumper {
         this.m_x = x;
         this.m_y = y;
         this.m_radius = radius;
-        this.m_baseColor = color;
         this.m_hitColor = Color.WHITE;
         this.m_currentColor = color;
         this.m_pointValue = pointValue;
         this.m_bounceStrength = bounceStrength;
     }
-
-
-    public Bumper(double x, double y, double radius, Color color, int pointValue) {
-        this(x, y, radius, color, pointValue, 10.0);
-    }
-
-
-    public double getX() { return m_x; }
-    public double getY() { return m_y; }
-    public double getRadius() { return m_radius; }
-    public int getPointValue() { return m_pointValue; }
-
 
     public boolean checkCollisionBumper(double ballX, double ballY, double ballRadius) {
         double dx = ballX - m_x;
@@ -51,11 +37,6 @@ public class Bumper {
     public int hit() {
         m_currentColor = m_hitColor;
         return m_pointValue;
-    }
-
-
-    public void update() {
-        m_currentColor = m_baseColor;
     }
 
 

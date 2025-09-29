@@ -18,13 +18,13 @@ public class LogWindowSource {
 
     public void registerListener(LogChangeListener listener) {
         m_listeners.offer(listener);
-        // При регистрации нового слушателя обновляем активных слушателей
+        //при регистрации нового слушателя обновляем активных слушателей
         updateActiveListeners();
     }
 
     public void unregisterListener(LogChangeListener listener) {
         m_listeners.remove(listener);
-        // При удалении слушателя обновляем активных слушателей
+        //при удалении слушателя обновляем активных слушателей
         updateActiveListeners();
     }
 
@@ -40,11 +40,11 @@ public class LogWindowSource {
     private void notifyListeners() {
         LogChangeListener[] activeListeners = m_activeListeners;
         if (activeListeners == null) {
-            // Если активные слушатели не были инициализированы, обновляем их
+            //если активные слушатели не были инициализированы, обновляем их
             updateActiveListeners();
             activeListeners = m_activeListeners;
         }
-        // Проверяем наличие активных слушателей перед оповещением
+        //проверяем наличие активных слушателей перед оповещением
         if (activeListeners != null) {
             for (LogChangeListener listener : activeListeners) {
                 listener.onLogChanged();
@@ -53,7 +53,7 @@ public class LogWindowSource {
     }
 
     private void updateActiveListeners() {
-        // Обновляем массив активных слушателей
+        //обновляем массив активных слушателей
         m_activeListeners = m_listeners.toArray(new LogChangeListener[0]);
     }
 
@@ -62,7 +62,7 @@ public class LogWindowSource {
     }
 
     public Iterable<LogEntry> range(int startFrom, int count) {
-        // Возвращаем подсписок сообщений в указанном диапазоне
+        //возвращаем подсписок сообщений в указанном диапазоне
         ArrayList<LogEntry> range = new ArrayList<>(m_messages);
         int end = Math.min(startFrom + count, range.size());
         return range.subList(startFrom, end);

@@ -1,4 +1,4 @@
-package gui;
+package gui.game;
 
 import java.awt.*;
 
@@ -13,7 +13,6 @@ public class Target {
     private final Color m_hitColor;
 
     private final int m_pointValue;
-    private long m_hitAnimationDuration = 300;
 
     private double m_bounceStrength;
 
@@ -31,30 +30,11 @@ public class Target {
         this.m_bounceStrength = 8.0;
     }
 
-    /**
-     * Конструктор с дополнительными параметрами
-     */
+
     public Target(double x, double y, double width, double height,
-                  Color baseColor, int pointValue, int maxHits, double bounceStrength) {
+                  Color baseColor, int pointValue, double bounceStrength) {
         this(x, y, width, height, baseColor, pointValue);
         this.m_bounceStrength = bounceStrength;
-    }
-
-
-    public double getX() {
-        return m_x;
-    }
-
-    public double getY() {
-        return m_y;
-    }
-
-    public double getWidth() {
-        return m_width;
-    }
-
-    public double getHeight() {
-        return m_height;
     }
 
     public double getCenterX() {
@@ -63,15 +43,6 @@ public class Target {
 
     public double getCenterY() {
         return m_y + m_height / 2;
-    }
-
-    public int getPointValue() {
-        return m_pointValue;
-    }
-
-
-    public void setBounceStrength(double strength) {
-        this.m_bounceStrength = strength;
     }
 
 
@@ -96,13 +67,6 @@ public class Target {
 
     private void startHitAnimation() {
         m_color = m_hitColor;
-    }
-
-
-    public void update() {
-        if (m_color == m_hitColor) {
-            long currentTime = System.currentTimeMillis();
-        }
     }
 
 
@@ -135,7 +99,7 @@ public class Target {
         double dx = ballX - centerX;
         double dy = ballY - centerY;
 
-        double length = Math.sqrt(dx * dx + dy * dy);
+        double length = calculateDistance(ballX, ballY, centerX, centerY);
         if (length > 0) {
             dx /= length;
             dy /= length;
@@ -144,18 +108,9 @@ public class Target {
         return new double[]{dx * m_bounceStrength, dy * m_bounceStrength};
     }
 
-
-    @Override
-    public String toString() {
-        return String.format("Target[%.1f,%.1f %dx%d points=%d hits=%d/%d active=%s]",
-                m_x, m_y, m_width, m_height, m_pointValue);
-    }
-
-    public long getM_hitAnimationDuration() {
-        return m_hitAnimationDuration;
-    }
-
-    public void setM_hitAnimationDuration(long m_hitAnimationDuration) {
-        this.m_hitAnimationDuration = m_hitAnimationDuration;
+    private double calculateDistance(double ballX, double ballY, double centerX, double centerY) {
+        double dx = ballX - centerX;
+        double dy = ballY - centerY;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 }

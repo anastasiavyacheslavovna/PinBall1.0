@@ -87,7 +87,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
         });
         menu.add(openLogWindowItem);
 
-        menu.addSeparator(); // Разделитель
+        menu.addSeparator(); // разделитель
 
         //пункт для закрытия игрового окна
         JMenuItem closeGameWindowItem = new JMenuItem("Закрыть игровое окно", KeyEvent.VK_G);

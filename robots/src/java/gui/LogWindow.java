@@ -13,11 +13,12 @@ import javax.swing.event.InternalFrameEvent;
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
+import log.Logger;
 
 public class LogWindow extends JInternalFrame implements LogChangeListener
 {
-    private LogWindowSource m_logSource;
-    private TextArea m_logContent;
+    private final LogWindowSource m_logSource;
+    private final TextArea m_logContent;
     private boolean closingFromMenu = false; //флаг на закрытие окна
 
     public LogWindow(LogWindowSource logSource) 
@@ -79,7 +80,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
                 setClosed(true);
                 return true;
             } catch (PropertyVetoException ex) {
-                ex.printStackTrace();
+                Logger.error("Ошибка при закрытии окна" + ex.getMessage());
                 return false;
             }
         } else {
