@@ -92,6 +92,8 @@ public class GamePhysics {
 
             if (distanceToClosest < BALL_RADIUS) {
                 Logger.debug("шарик столкнулся со стенкой");
+                //new скорость по x сохранена в другой переменной
+                double velocityX = Math.abs(visualizer.getBallVelocityX());
 
                 if (isLeft) {
                     visualizer.setBallVelocityX(Math.abs(visualizer.getBallVelocityY()));
@@ -99,11 +101,8 @@ public class GamePhysics {
                     visualizer.setBallVelocityX(-Math.abs(visualizer.getBallVelocityY()));
                 }
 
-                if (visualizer.getBallVelocityY() < 0) {
-                    visualizer.setBallVelocityY(Math.abs(visualizer.getBallVelocityX()) + 1);
-                } else {
-                    visualizer.setBallVelocityY(-Math.abs(visualizer.getBallVelocityX()) - 1);
-                }
+                //new после соударения у < 0
+                visualizer.setBallVelocityY(- velocityX - 1);
                 return true;
             }
         }
@@ -199,7 +198,7 @@ public class GamePhysics {
     }
 
 
-    private double pointToLineDistance(double px, double py, double x1, double y1, double x2, double y2) {
+    public static double pointToLineDistance(double px, double py, double x1, double y1, double x2, double y2) {
         double A = px - x1;
         double B = py - y1;
         double C = x2 - x1;

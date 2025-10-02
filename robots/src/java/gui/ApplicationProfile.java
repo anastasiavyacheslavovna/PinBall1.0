@@ -24,4 +24,3 @@ public class ApplicationProfile implements Serializable {
     public boolean isProfileExists() { return profileExists; }
     public void setProfileExists(boolean profileExists) { this.profileExists = profileExists; }
 }
-

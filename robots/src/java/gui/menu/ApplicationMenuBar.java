@@ -19,7 +19,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
     private void initializeMenu() {
         add(createLookAndFeelMenu());
         add(createTestMenu());
-        add(createWindowMenu()); //меню управления окнами
+        add(createWindowMenu());
     }
 
     private JMenu createLookAndFeelMenu() {
@@ -42,7 +42,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
         JMenuItem menuItem = new JMenuItem(text, mnemonic);
         menuItem.addActionListener(event -> {
             mainFrame.setLookAndFeel(lookAndFeelClassName);
-            mainFrame.invalidate(); // обновляем интерфейс
+            mainFrame.invalidate();
         });
         return menuItem;
     }
@@ -87,7 +87,7 @@ public class ApplicationMenuBar extends JMenuBar { //выделила созда
         });
         menu.add(openLogWindowItem);
 
-        menu.addSeparator(); // разделитель
+        menu.addSeparator();
 
         //пункт для закрытия игрового окна
         JMenuItem closeGameWindowItem = new JMenuItem("Закрыть игровое окно", KeyEvent.VK_G);

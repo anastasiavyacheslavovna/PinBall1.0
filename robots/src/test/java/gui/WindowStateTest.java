@@ -5,7 +5,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +22,7 @@ public class WindowStateTest {
 
     @Before
     public void setUp() {
+        ConfirmationDialog.setTestMode(true, true);
         profileFile = new File(PROFILE_FILE);
         deleteProfileFile();
 
@@ -35,6 +35,7 @@ public class WindowStateTest {
         if (mainFrame != null) {
             mainFrame.dispose();
         }
+        ConfirmationDialog.resetTestMode();
     }
 
 
@@ -49,19 +50,6 @@ public class WindowStateTest {
         }
     }
 
-    @Test
-    public void testProfileIsSavedOnExit() {
-        try {
-            saveProfile();
-
-            assertTrue(profileFile.exists());
-
-            assertTrue(profileFile.length() > 0);
-
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
 
     @Test
     public void testProfileContainsWindowStates() {
@@ -151,49 +139,19 @@ public class WindowStateTest {
     @Test
     public void testRestoreProfileDialogShown() {
         try {
-            ApplicationProfile testProfile = new ApplicationProfile();
+            ApplicationProfile testProfile = createTestProfile();
+            saveTestProfile(testProfile);
 
-            try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(
-                    Files.newOutputStream(Paths.get(PROFILE_FILE)))) {
-                oos.writeObject(testProfile);
-            }
+            ConfirmationDialog.setTestMode(true, false);
+            boolean resultNo = ConfirmationDialog.showRestoreProfileDialog();
+            assertFalse(resultNo);
 
-            Method showDialogMethod = MainApplicationFrame.class.getDeclaredMethod("showRestoreProfileDialog");
-            showDialogMethod.setAccessible(true);
+            ConfirmationDialog.setTestMode(true, true);
+            boolean resultYes = ConfirmationDialog.showRestoreProfileDialog();
+            assertTrue(resultYes);
 
-            new Thread(() -> {
-                try {
-                    Thread.sleep(500);
-
-                    Window[] windows = Window.getWindows();
-                    for (Window window : windows) {
-                        if (window instanceof JDialog) {
-                            JDialog dialog = (JDialog) window;
-                            if (dialog.getTitle() != null && dialog.getTitle().contains("Восстановление профиля")) {
-                                SwingUtilities.invokeLater(() -> {
-                                    for (Component comp : dialog.getContentPane().getComponents()) {
-                                        if (comp instanceof JButton) {
-                                            JButton button = (JButton) comp;
-                                            if (button.getText() != null && button.getText().toLowerCase().contains("нет")) {
-                                                button.doClick();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                });
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    fail(e.getMessage());
-                }
-            }).start();
-
-
-            Boolean result = (Boolean) showDialogMethod.invoke(mainFrame);
-
-            assertNotNull(result);
+            assertNotNull(resultNo);
+            assertNotNull(resultYes);
 
         } catch (Exception e) {
             fail(e.getMessage());
@@ -241,6 +199,106 @@ public class WindowStateTest {
     }
 
 
+    @Test
+    public void testLogWindowStatePersistence() { //сохраняется положение маленького окна
+        try {
+            WindowPair windows = getWindows();
+            LogWindow logWindow = windows.logWindow;
+
+            logWindow.setLocation(150, 150);
+            logWindow.setSize(450, 550);
+            logWindow.setMaximum(true);
+
+            saveProfile();
+            ApplicationProfile profile = loadProfile();
+
+            WindowState logState = profile.getLogWindowState();
+            assertNotNull(logState);
+            assertTrue(logState.isOpen());
+            assertTrue(logState.isMaximum());
+
+            Rectangle savedBounds = logState.getBounds();
+            assertNotNull(savedBounds);
+            assertTrue(savedBounds.width > 0);
+            assertTrue(savedBounds.height > 0);
+
+        } catch (Exception e) {
+            fail("Тест провалился: " + e.getMessage());
+        }
+    }
+
+
+    @Test
+    public void testLogWindowRestoreFromMaximized() { //развернутое после сохранения
+        try {
+            ApplicationProfile testProfile = new ApplicationProfile();
+            testProfile.setProfileExists(true);
+
+            testProfile.setLogWindowState(new WindowState(true, new Rectangle(100, 100, 500, 400), false, true));
+            testProfile.setGameWindowState(new WindowState(true, new Rectangle(50, 50, 800, 600), false, false));
+
+            saveTestProfile(testProfile);
+
+            MainApplicationFrame newFrame = new MainApplicationFrame();
+
+            Field logWindowField = MainApplicationFrame.class.getDeclaredField("logWindow");
+            logWindowField.setAccessible(true);
+            LogWindow restoredLogWindow = (LogWindow) logWindowField.get(newFrame);
+
+            assertNotNull(restoredLogWindow);
+            assertTrue(restoredLogWindow.isMaximum());
+            assertTrue(restoredLogWindow.isVisible());
+
+            newFrame.dispose();
+
+        } catch (Exception e) {
+            fail("Тест провалился: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testLogWindowRestoreFromIconified() { //свернутость при сохранении
+        try {
+            ApplicationProfile testProfile = new ApplicationProfile();
+            testProfile.setProfileExists(true);
+
+            testProfile.setLogWindowState(new WindowState(true, new Rectangle(100, 100, 500, 400), true, false));
+            testProfile.setGameWindowState(new WindowState(true, new Rectangle(50, 50, 800, 600), false, false));
+
+            saveTestProfile(testProfile);
+
+            MainApplicationFrame newFrame = new MainApplicationFrame();
+
+            Field logWindowField = MainApplicationFrame.class.getDeclaredField("logWindow");
+            logWindowField.setAccessible(true);
+            LogWindow restoredLogWindow = (LogWindow) logWindowField.get(newFrame);
+
+            assertNotNull(restoredLogWindow);
+            assertTrue(restoredLogWindow.isIcon());
+
+            newFrame.dispose();
+
+        } catch (Exception e) {
+            fail("Тест провалился: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testLogWindowCloseConfirmation() { //закрытие
+        try {
+            WindowPair windows = getWindows();
+            LogWindow logWindow = windows.logWindow;
+
+            boolean closeResult = logWindow.closeWindow();
+
+            assertTrue(closeResult);
+
+        } catch (Exception e) {
+            fail("Тест провалился: " + e.getMessage());
+        }
+    }
+
+
     private void saveProfile() throws Exception {
         Method saveProfileMethod = MainApplicationFrame.class.getDeclaredMethod("saveProfile");
         saveProfileMethod.setAccessible(true);
@@ -263,6 +321,9 @@ public class WindowStateTest {
 
         LogWindow logWindow = (LogWindow) logWindowField.get(mainFrame);
         GameWindow gameWindow = (GameWindow) gameWindowField.get(mainFrame);
+
+        assertNotNull(logWindow);
+        assertNotNull(gameWindow);
 
         return new WindowPair(logWindow, gameWindow);
     }

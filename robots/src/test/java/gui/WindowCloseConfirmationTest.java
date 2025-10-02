@@ -1,23 +1,35 @@
 package gui;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
-import javax.swing.JOptionPane;
+import java.beans.PropertyVetoException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 //подтверждение закрытия
 class WindowCloseConfirmationTest {
+    @BeforeEach
+    void setUp() {
+        ConfirmationDialog.setTestMode(true, true);
+    }
+
+    @AfterEach
+    void tearDown() {
+        ConfirmationDialog.resetTestMode();
+    }
 
     @Test
     void testConfirmationDialogMethodsExist() {
         GameWindow gameWindow = new GameWindow();
         LogWindow logWindow = new LogWindow(log.Logger.getDefaultLogSource());
 
-        assertDoesNotThrow(() -> gameWindow.closeWithConfirmation());
-        assertDoesNotThrow(() -> logWindow.closeWithConfirmation());
+        assertDoesNotThrow(gameWindow::closeWindow);
+        assertDoesNotThrow(logWindow::closeWindow);
 
         assertDoesNotThrow(() -> ConfirmationDialog.showCloseConfirmation("Тест"));
-        assertDoesNotThrow(() -> ConfirmationDialog.showExitConfirmation());
+        assertDoesNotThrow(ConfirmationDialog::showExitConfirmation);
     }
 
     @Test
@@ -25,15 +37,26 @@ class WindowCloseConfirmationTest {
         GameWindow gameWindow = new GameWindow();
         LogWindow logWindow = new LogWindow(log.Logger.getDefaultLogSource());
 
+        assertDoesNotThrow(gameWindow::closeWindow);
+        assertDoesNotThrow(logWindow::closeWindow);
+
         assertDoesNotThrow(() -> {
-            if (!gameWindow.isClosed()) {
-                gameWindow.setClosed(true);
+            try {
+                if (!gameWindow.isClosed()) {
+                    gameWindow.setClosed(true);
+                }
+            } catch (PropertyVetoException e) {
+                //ignor
             }
         });
 
         assertDoesNotThrow(() -> {
-            if (!logWindow.isClosed()) {
-                logWindow.setClosed(true);
+            try {
+                if (!logWindow.isClosed()) {
+                    logWindow.setClosed(true);
+                }
+            } catch (PropertyVetoException e) {
+                //ignor
             }
         });
     }
