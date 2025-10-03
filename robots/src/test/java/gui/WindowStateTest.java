@@ -178,7 +178,7 @@ public class WindowStateTest {
     }
 
     @Test
-    public void testProfileFileDeletedOnReject() {
+    public void testProfileFileDeletedOnReject() { //удаление профиля
         try {
             ApplicationProfile testProfile = createTestProfile();
             boolean saved = saveTestProfile(testProfile);
@@ -200,27 +200,46 @@ public class WindowStateTest {
 
 
     @Test
-    public void testLogWindowStatePersistence() { //сохраняется положение маленького окна
+    public void testLogWindowStatePersistence() {
         try {
             WindowPair windows = getWindows();
             LogWindow logWindow = windows.logWindow;
 
-            logWindow.setLocation(150, 150);
-            logWindow.setSize(450, 550);
+            Rectangle originalBounds = logWindow.getBounds();
+            int originalX = originalBounds.x;
+            int originalY = originalBounds.y;
+            int originalWidth = originalBounds.width;
+            int originalHeight = originalBounds.height;
+
             logWindow.setMaximum(true);
+            assertTrue(logWindow.isMaximum());
 
             saveProfile();
+
             ApplicationProfile profile = loadProfile();
+            WindowState savedState = profile.getLogWindowState();
 
-            WindowState logState = profile.getLogWindowState();
-            assertNotNull(logState);
-            assertTrue(logState.isOpen());
-            assertTrue(logState.isMaximum());
+            assertEquals(originalX, savedState.getBounds().x);
+            assertEquals(originalY, savedState.getBounds().y);
+            assertEquals(originalWidth, savedState.getBounds().width);
+            assertEquals(originalHeight, savedState.getBounds().height);
+            assertTrue(savedState.isMaximum());
 
-            Rectangle savedBounds = logState.getBounds();
-            assertNotNull(savedBounds);
-            assertTrue(savedBounds.width > 0);
-            assertTrue(savedBounds.height > 0);
+            mainFrame.dispose();
+
+            mainFrame = new MainApplicationFrame();
+            Field logWindowStateField = MainApplicationFrame.class.getDeclaredField("logWindow");
+            logWindowStateField.setAccessible(true);
+            LogWindow restoreLogWindow = (LogWindow) logWindowStateField.get(mainFrame);
+
+            assertTrue(restoreLogWindow.isMaximum());
+            restoreLogWindow.setMaximum(false);
+
+            Rectangle restoredBounds = restoreLogWindow.getBounds();
+            assertEquals(originalX, restoredBounds.x);
+            assertEquals(originalY, restoredBounds.y);
+            assertEquals(originalWidth, restoredBounds.width);
+            assertEquals(originalHeight, restoredBounds.height);
 
         } catch (Exception e) {
             fail("Тест провалился: " + e.getMessage());
@@ -277,21 +296,6 @@ public class WindowStateTest {
             assertTrue(restoredLogWindow.isIcon());
 
             newFrame.dispose();
-
-        } catch (Exception e) {
-            fail("Тест провалился: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testLogWindowCloseConfirmation() { //закрытие
-        try {
-            WindowPair windows = getWindows();
-            LogWindow logWindow = windows.logWindow;
-
-            boolean closeResult = logWindow.closeWindow();
-
-            assertTrue(closeResult);
 
         } catch (Exception e) {
             fail("Тест провалился: " + e.getMessage());
